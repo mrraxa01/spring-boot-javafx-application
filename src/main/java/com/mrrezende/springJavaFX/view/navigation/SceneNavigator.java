@@ -16,6 +16,8 @@ import java.util.Objects;
 @Component
 public class SceneNavigator {
 
+    private static final String GLOBAL_STYLESHEET = "/views/css/app.css";
+
     private final FxWeaver fxWeaver;
 
     private Stage primaryStage;
@@ -34,10 +36,13 @@ public class SceneNavigator {
 
     /**
      * Troca a cena atual do Stage principal pela view associada ao controller informado.
+     * O CSS global (/views/css/app.css) e sempre aplicado primeiro, como tema base;
+     * qualquer stylesheet especifico da tela e adicionado depois, podendo sobrescrever
+     * regras do tema base (ultima regra declarada vence, em caso de mesma especificidade).
      *
      * @param controllerClass controller anotado com @FxmlView
-     * @param stylesheets     caminhos absolutos de classpath para CSS (ex: "/views/css/app.css").
-     *                        Pode ser omitido se a tela nao tiver estilo proprio.
+     * @param stylesheets     caminhos absolutos de classpath para CSS adicionais, especificos
+     *                        da tela (ex: "/views/css/welcome.css"). Pode ser omitido.
      */
     public void navigateTo(Class<?> controllerClass, String... stylesheets) {
         if (primaryStage == null) {
@@ -45,11 +50,18 @@ public class SceneNavigator {
         }
         Parent parent = fxWeaver.loadView(controllerClass);
         Scene scene = new Scene(parent);
+
+        addStylesheet(scene, GLOBAL_STYLESHEET);
         for (String css : stylesheets) {
-            scene.getStylesheets().add(
-                    Objects.requireNonNull(getClass().getResource(css), "CSS nao encontrado: " + css)
-                            .toExternalForm());
+            addStylesheet(scene, css);
         }
+
         primaryStage.setScene(scene);
+    }
+
+    private void addStylesheet(Scene scene, String css) {
+        scene.getStylesheets().add(
+                Objects.requireNonNull(getClass().getResource(css), "CSS nao encontrado: " + css)
+                        .toExternalForm());
     }
 }

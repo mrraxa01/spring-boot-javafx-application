@@ -31,7 +31,7 @@ public class StageReadyEventListener implements ApplicationListener<StageReadyEv
         var stage = event.getStage();
         try {
             sceneNavigator.setPrimaryStage(stage);
-            sceneNavigator.navigateTo(MainWindowController.class, "/views/css/app.css");
+            sceneNavigator.navigateTo(MainWindowController.class);
 
             // CSSFX (hot-reload de CSS) so faz sentido em desenvolvimento
             if (environment.matchesProfiles("dev")) {
