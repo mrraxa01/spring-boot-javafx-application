@@ -1,42 +1,49 @@
 package com.mrrezende.springJavaFX.view.event;
 
 import com.mrrezende.springJavaFX.view.controllers.MainWindowController;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import net.rgielen.fxweaver.core.FxWeaver;
+import com.mrrezende.springJavaFX.view.navigation.SceneNavigator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
+import org.springframework.core.env.Environment;
 import fr.brouillard.oss.cssfx.CSSFX;
 import org.springframework.stereotype.Component;
-
-import java.util.Objects;
 
 @Component
 public class StageReadyEventListener implements ApplicationListener<StageReadyEvent> {
 
+    private static final Logger log = LoggerFactory.getLogger(StageReadyEventListener.class);
+
     private final String applicationTitle;
 
-    private final FxWeaver fxWeaver;
+    private final SceneNavigator sceneNavigator;
 
-    public StageReadyEventListener(String applicationTitle, FxWeaver fxWeaver) {
+    private final Environment environment;
+
+    public StageReadyEventListener(String applicationTitle, SceneNavigator sceneNavigator, Environment environment) {
         this.applicationTitle = applicationTitle;
-        this.fxWeaver = fxWeaver;
+        this.sceneNavigator = sceneNavigator;
+        this.environment = environment;
     }
 
     @Override
     public void onApplicationEvent(StageReadyEvent event) {
         var stage = event.getStage();
-        Parent parent = fxWeaver.loadView(MainWindowController.class);
-        var scene = new Scene(parent);
-        scene
-                .getStylesheets()
-                .add(
-                        Objects.requireNonNull(
-                                        StageReadyEventListener.class.getResource("/views/css/app.css"))
-                                .toExternalForm());
-        CSSFX.start();
-        stage.setScene(scene);
-        stage.setTitle(applicationTitle);
-        stage.centerOnScreen();
-        stage.show();
+        try {
+            sceneNavigator.setPrimaryStage(stage);
+            sceneNavigator.navigateTo(MainWindowController.class, "/views/css/app.css");
+
+            // CSSFX (hot-reload de CSS) so faz sentido em desenvolvimento
+            if (environment.matchesProfiles("dev")) {
+                CSSFX.start();
+            }
+
+            stage.setTitle(applicationTitle);
+            stage.centerOnScreen();
+            stage.show();
+        } catch (Exception e) {
+            log.error("Falha ao carregar a tela inicial da aplicacao", e);
+            throw e;
+        }
     }
 }
